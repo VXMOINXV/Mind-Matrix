@@ -17,12 +17,9 @@ import {
   Zap,
   Cpu
 } from 'lucide-react';
-import { io } from 'socket.io-client';
 import { analyzeFrame, AnalysisResult } from './services/geminiService';
 import { cn } from './lib/utils';
 import { format } from 'date-fns';
-
-const socket = io();
 
 // --- Components ---
 
@@ -77,33 +74,32 @@ export default function App() {
   const analysisTimerRef = useRef<any>(null);
 
   useEffect(() => {
-    fetch('/api/logs').then(res => res.json()).then(setLogs);
-    
-    socket.on('new_log', (log) => {
-      setLogs(prev => [log, ...prev].slice(0, 50));
-    });
+    const savedLogs = localStorage.getItem('proctor_logs');
+    if (savedLogs) {
+      setLogs(JSON.parse(savedLogs));
+    }
+  }, []);
 
-    return () => {
-      socket.off('new_log');
-      if (analysisTimerRef.current) clearInterval(analysisTimerRef.current);
-    };
+  const addLog = useCallback((log: any) => {
+    setLogs(prev => {
+      const newLogs = [log, ...prev].slice(0, 50);
+      localStorage.setItem('proctor_logs', JSON.stringify(newLogs));
+      return newLogs;
+    });
   }, []);
 
   const triggerAlert = useCallback(async (result: AnalysisResult, screenshot: string) => {
     if (result.suspicionScore > 30) {
-      await fetch('/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          student_id: activeStudent.id,
-          type: result.isPhoneDetected ? 'PHONE' : 'BEHAVIOR',
-          severity: result.suspicionScore > 60 ? 'high' : 'medium',
-          message: result.behaviors.join(', '),
-          evidence_data: screenshot
-        })
+      addLog({
+        student_id: activeStudent.id,
+        type: result.isPhoneDetected ? 'PHONE' : 'BEHAVIOR',
+        severity: result.suspicionScore > 60 ? 'high' : 'medium',
+        message: result.behaviors.join(', '),
+        timestamp: new Date().toISOString(),
+        evidence_data: screenshot
       });
     }
-  }, [activeStudent]);
+  }, [activeStudent, addLog]);
 
   const runAnalysis = useCallback(async () => {
     if (!webcamRef.current) return;

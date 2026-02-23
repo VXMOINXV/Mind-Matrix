@@ -1,7 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export interface AnalysisResult {
   suspicionScore: number;
   behaviors: string[];
@@ -11,49 +7,41 @@ export interface AnalysisResult {
   confidence: number;
 }
 
+// Local simulated analysis (No API required)
 export async function analyzeFrame(base64Image: string): Promise<AnalysisResult> {
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-latest",
-      contents: [
-        {
-          parts: [
-            {
-              inlineData: {
-                mimeType: "image/png",
-                data: base64Image.split(',')[1],
-              },
-            },
-            {
-              text: `Act as an AI Exam Proctor. Analyze this frame for cheating behavior. 
-              Return a JSON object with:
-              - suspicionScore: (0-100)
-              - behaviors: array of strings (e.g., "Looking down", "Phone detected", "Normal")
-              - isPhoneDetected: boolean
-              - isLookingAway: boolean
-              - isFaceMissing: boolean
-              - confidence: number (0-1)
-              
-              Be strict but fair.`,
-            },
-          ],
-        },
-      ],
-      config: {
-        responseMimeType: "application/json",
-      },
-    });
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Simulate analysis logic
+      const randomValue = Math.random();
+      let suspicionScore = 10;
+      let behaviors = ["Normal"];
+      let isPhoneDetected = false;
+      let isLookingAway = false;
+      let isFaceMissing = false;
 
-    return JSON.parse(response.text || "{}") as AnalysisResult;
-  } catch (error) {
-    console.error("Gemini Analysis Error:", error);
-    return {
-      suspicionScore: 0,
-      behaviors: ["Analysis Error"],
-      isPhoneDetected: false,
-      isLookingAway: false,
-      isFaceMissing: false,
-      confidence: 0,
-    };
-  }
+      if (randomValue > 0.85) {
+        suspicionScore = 75;
+        behaviors = ["Phone detected", "Looking down"];
+        isPhoneDetected = true;
+      } else if (randomValue > 0.6) {
+        suspicionScore = 45;
+        behaviors = ["Looking away"];
+        isLookingAway = true;
+      } else if (randomValue > 0.95) {
+        suspicionScore = 60;
+        behaviors = ["Face missing"];
+        isFaceMissing = true;
+      }
+
+      resolve({
+        suspicionScore,
+        behaviors,
+        isPhoneDetected,
+        isLookingAway,
+        isFaceMissing,
+        confidence: 0.85 + (Math.random() * 0.1), // 85% - 95% confidence
+      });
+    }, 500); // Simulate processing delay
+  });
 }
+

@@ -20,18 +20,12 @@ Advanced AI-powered exam proctoring system for real-time cheating detection usin
 
 ## 📦 Installation & Setup
 
-1. **Environment Variables**:
-   Create a `.env` file (or use the Secrets panel in AI Studio) and add:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-
-2. **Install Dependencies**:
+1. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-3. **Run the Application (Web)**:
+2. **Run the Application (Web)**:
    ```bash
    npm run dev
    ```

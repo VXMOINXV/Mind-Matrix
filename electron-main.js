@@ -20,7 +20,7 @@ function createWindow() {
   // In production, load the built index.html
   // In development, load the Vite dev server URL
   if (app.isPackaged) {
-    win.loadFile(path.join(__dirname, '../dist/index.html'));
+    win.loadFile(path.join(__dirname, 'dist/index.html'));
   } else {
     win.loadURL('http://localhost:3000');
   }
