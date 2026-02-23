@@ -1,0 +1,8 @@
+{
+  "name": "MINDMATRIX AI PROCTOR X",
+  "description": "Advanced AI-powered exam proctoring system for real-time cheating detection using computer vision and behavioral analysis. Developed for Tech Fest at The Calcutta Technical School.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
