@@ -54,7 +54,7 @@ To run the application as a standalone desktop app or build an executable:
 
 ## 🎓 Credits
 - **Created By**: Md Moinuddin Islam (Dept: CST, Sem: 1st)
-- **Idea By**: Suman Dutta
+- **Idea By**: Suman Dutta & Assist by Anmol Gorai , Sudipto Roy
 - **Institution**: The Calcutta Technical School
 - **Event**: Tech Fest
 
