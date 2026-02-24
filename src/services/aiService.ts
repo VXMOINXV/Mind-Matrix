@@ -35,8 +35,7 @@ export class AIService {
       try {
         const faceModel = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
         const faceDetectorConfig: any = {
-          runtime: 'mediapipe',
-          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+          runtime: 'tfjs',
           refineLandmarks: true,
           maxFaces: 10,
         };
@@ -49,8 +48,7 @@ export class AIService {
       try {
         const handModel = handPoseDetection.SupportedModels.MediaPipeHands;
         const handDetectorConfig: any = {
-          runtime: 'mediapipe',
-          solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+          runtime: 'tfjs',
           modelType: 'lite',
           maxHands: 20,
         };
