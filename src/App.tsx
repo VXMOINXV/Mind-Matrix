@@ -372,6 +372,15 @@ export default function App() {
           </div>
         </div>
 
+        <div className="hidden md:flex flex-col items-center justify-center flex-1 mx-8 text-center">
+          <p className="text-xs text-neon-blue font-mono font-bold uppercase tracking-wider">Institution: The Calcutta Technical School</p>
+          <div className="flex gap-4 text-[10px] text-white/60 font-mono mt-0.5">
+            <span>Created By: Md Moinuddin Islam (Dept: CST, Sem: 1st)</span>
+            <span className="text-white/30">|</span>
+            <span>Idea By: Suman Dutta</span>
+          </div>
+        </div>
+
         <div className="flex items-center gap-6">
           {initError && (
             <div className="text-xs text-neon-red font-mono max-w-xs truncate" title={initError}>

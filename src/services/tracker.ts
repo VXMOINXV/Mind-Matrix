@@ -12,7 +12,7 @@ class KalmanFilter {
   private p: number; // estimation error covariance
   private k: number; // kalman gain
 
-  constructor(q: number = 0.1, r: number = 0.1, initialValue: number = 0) {
+  constructor(q: number = 0.05, r: number = 0.5, initialValue: number = 0) {
     this.q = q;
     this.r = r;
     this.x = initialValue;
@@ -20,10 +20,13 @@ class KalmanFilter {
     this.k = 0;
   }
 
-  update(measurement: number): number {
+  predict(): number {
     // Prediction update
     this.p = this.p + this.q;
+    return this.x;
+  }
 
+  update(measurement: number): number {
     // Measurement update
     this.k = this.p / (this.p + this.r);
     this.x = this.x + this.k * (measurement - this.x);
@@ -56,7 +59,7 @@ export class Tracker {
   private tracks: TrackedObject[] = [];
   private nextId: number = 1;
   private maxAge: number = 15; // frames to keep track alive without detection
-  private iouThreshold: number = 0.3;
+  private iouThreshold: number = 0.2; // Lowered to handle faster movements
 
   private calculateIoU(boxA: BoundingBox, boxB: BoundingBox): number {
     const xA = Math.max(boxA.x, boxB.x);
@@ -74,8 +77,16 @@ export class Tracker {
   }
 
   public update(detections: { bbox: BoundingBox; class: string; score: number }[]): TrackedObject[] {
-    // Increment timeSinceUpdate for all tracks
-    this.tracks.forEach(t => t.timeSinceUpdate++);
+    // Predict next state for all tracks
+    this.tracks.forEach(track => {
+      track.timeSinceUpdate++;
+      if (track.kfX && track.kfY && track.kfW && track.kfH) {
+        track.bbox.x = track.kfX.predict();
+        track.bbox.y = track.kfY.predict();
+        track.bbox.width = track.kfW.predict();
+        track.bbox.height = track.kfH.predict();
+      }
+    });
 
     const matchedDetections = new Set<number>();
     const matchedTracks = new Set<number>();
@@ -101,10 +112,10 @@ export class Tracker {
         const track = this.tracks[bestTrackIdx];
         const detBbox = detections[d].bbox;
         
-        if (!track.kfX) track.kfX = new KalmanFilter(0.1, 0.1, track.bbox.x);
-        if (!track.kfY) track.kfY = new KalmanFilter(0.1, 0.1, track.bbox.y);
-        if (!track.kfW) track.kfW = new KalmanFilter(0.1, 0.1, track.bbox.width);
-        if (!track.kfH) track.kfH = new KalmanFilter(0.1, 0.1, track.bbox.height);
+        if (!track.kfX) track.kfX = new KalmanFilter(0.05, 0.5, track.bbox.x);
+        if (!track.kfY) track.kfY = new KalmanFilter(0.05, 0.5, track.bbox.y);
+        if (!track.kfW) track.kfW = new KalmanFilter(0.05, 0.5, track.bbox.width);
+        if (!track.kfH) track.kfH = new KalmanFilter(0.05, 0.5, track.bbox.height);
 
         const smoothedX = track.kfX.update(detBbox.x);
         const smoothedY = track.kfY.update(detBbox.y);
@@ -137,10 +148,10 @@ export class Tracker {
           age: 1,
           timeSinceUpdate: 0,
           history: [{ ...bbox }],
-          kfX: new KalmanFilter(0.1, 0.1, bbox.x),
-          kfY: new KalmanFilter(0.1, 0.1, bbox.y),
-          kfW: new KalmanFilter(0.1, 0.1, bbox.width),
-          kfH: new KalmanFilter(0.1, 0.1, bbox.height)
+          kfX: new KalmanFilter(0.05, 0.5, bbox.x),
+          kfY: new KalmanFilter(0.05, 0.5, bbox.y),
+          kfW: new KalmanFilter(0.05, 0.5, bbox.width),
+          kfH: new KalmanFilter(0.05, 0.5, bbox.height)
         });
       }
     }
@@ -149,6 +160,6 @@ export class Tracker {
     this.tracks = this.tracks.filter(t => t.timeSinceUpdate <= this.maxAge);
 
     // Return active tracks (recently updated or slightly stale)
-    return this.tracks.filter(t => t.timeSinceUpdate <= 2 && t.age >= 1);
+    return this.tracks.filter(t => t.timeSinceUpdate <= 3 && t.age >= 2);
   }
 }

@@ -100,7 +100,7 @@ export async function generateProctorReport(logs: any[]): Promise<string> {
     ).join('\n');
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-latest",
+      model: "gemini-3-flash-preview",
       contents: `Act as an expert AI Exam Proctor. Analyze the following recent exam logs and provide a brief, professional summary report of the session's integrity. Highlight any major concerns.
       
       Logs:

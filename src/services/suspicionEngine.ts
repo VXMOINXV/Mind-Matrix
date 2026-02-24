@@ -124,30 +124,40 @@ export class SuspicionEngine {
       let headTurned: 'left' | 'right' | null = null;
 
       if (studentFace && studentFace.keypoints) {
-        // Simple heuristic for head pitch down: nose is close to chin
         const nose = studentFace.keypoints.find(k => k.name === 'noseTip');
         const chin = studentFace.keypoints.find(k => k.name === 'silhouette' && k.y > studentFace.box.yMin + studentFace.box.height * 0.8);
-        if (nose && chin && (chin.y - nose.y) < studentFace.box.height * 0.2) {
-          headPitchedDown = true;
-        }
-
-        // Simple heuristic for mouth open: distance between upper and lower lip
-        const upperLip = studentFace.keypoints.find(k => k.name === 'lipsUpperInner');
-        const lowerLip = studentFace.keypoints.find(k => k.name === 'lipsLowerInner');
-        if (upperLip && lowerLip && (lowerLip.y - upperLip.y) > studentFace.box.height * 0.05) {
-          mouthOpen = true;
-        }
-
-        // Head turn detection
         const leftEar = studentFace.keypoints.find(k => k.name === 'leftEar');
         const rightEar = studentFace.keypoints.find(k => k.name === 'rightEar');
+        const upperLip = studentFace.keypoints.find(k => k.name === 'lipsUpperInner');
+        const lowerLip = studentFace.keypoints.find(k => k.name === 'lipsLowerInner');
+
+        // Head pitch down detection (refined)
+        if (nose && chin) {
+          const faceHeight = studentFace.box.height;
+          // If distance from nose to chin is unusually small compared to face height
+          if ((chin.y - nose.y) < faceHeight * 0.25) {
+            headPitchedDown = true;
+          }
+        }
+
+        // Mouth open detection
+        if (upperLip && lowerLip) {
+          if ((lowerLip.y - upperLip.y) > studentFace.box.height * 0.05) {
+            mouthOpen = true;
+          }
+        }
+
+        // Head turn detection (refined using ratio)
         if (nose && leftEar && rightEar) {
-          const distLeft = nose.x - leftEar.x;
-          const distRight = rightEar.x - nose.x;
-          if (distLeft > distRight * 2) {
-            headTurned = 'right'; // Looking right (from camera perspective)
-          } else if (distRight > distLeft * 2) {
-            headTurned = 'left'; // Looking left
+          const faceWidth = rightEar.x - leftEar.x;
+          if (faceWidth > 0) {
+            // Ratio of nose position between ears. 0.5 is looking straight.
+            const ratio = (nose.x - leftEar.x) / faceWidth;
+            if (ratio < 0.25) {
+              headTurned = 'right'; // Looking right (from camera perspective)
+            } else if (ratio > 0.75) {
+              headTurned = 'left'; // Looking left
+            }
           }
         }
       }
@@ -157,8 +167,9 @@ export class SuspicionEngine {
       if (studentHands.length > 0) {
         // Check if hands are in the lower part of the bounding box
         handsBelowDesk = studentHands.some(h => {
+          if (h.keypoints.length === 0) return false;
           const wrist = h.keypoints[0];
-          return wrist.y > student.bbox.y + student.bbox.height * 0.7;
+          return wrist.y > student.bbox.y + student.bbox.height * 0.65; // Slightly higher threshold
         });
         
         // If hands are on desk and head is pitched down, likely writing
@@ -168,10 +179,12 @@ export class SuspicionEngine {
       }
       state.isWriting = isWriting;
 
+      // 1. Phone Hiding Detection (Refined)
+      // Trigger if phone is detected OR (head is down AND hands are below desk)
       if (phoneDetected || (headPitchedDown && handsBelowDesk)) {
         if (!state.phoneHidingStartTime) {
           state.phoneHidingStartTime = now;
-        } else if (now - state.phoneHidingStartTime > 3000) { // Persists for 3 seconds
+        } else if (now - state.phoneHidingStartTime > 1500) { // Persists for 1.5 seconds
           if (now - state.lastPhoneDetection > 3000) {
             scoreDelta += 50; // High penalty for phone
             state.lastPhoneDetection = now;
